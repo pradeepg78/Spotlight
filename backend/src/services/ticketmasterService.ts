@@ -3,8 +3,6 @@ import * as dotenv from 'dotenv';
 import * as path from 'path';
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
-
-
 const BASE_URL = 'https://app.ticketmaster.com/discovery/v2';
 const API_KEY = process.env.TICKETMASTER_API_KEY; 
 
