@@ -103,7 +103,7 @@ class TicketmasterService {
       id: tmEvent.id,
       name: tmEvent.name,
       date: tmEvent.dates?.start?.localDate || 'TBA',
-      time: tmEvent.dates?.start?.localTime || 'TBA',  // ← Add this!
+      time: tmEvent.dates?.start?.localTime || 'TBA', 
       venueName: venue?.name || 'TBA',
       city: venue?.city?.name || 'TBA',
       latitude: parseFloat(venue?.location?.latitude || '0'),
