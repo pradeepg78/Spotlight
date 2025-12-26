@@ -3,12 +3,14 @@ import ticketmasterService from '../services/ticketmasterService';
 async function test() {
   console.log('testing Ticketmaster Service...\n');
   
-  const events = await ticketmasterService.searchEvents('concerts', 'New York');
+  const events = await ticketmasterService.searchEvents('football', 'Ann Arbor');
   
   console.log(`Found ${events.length} events\n`);
   console.log('='.repeat(60));
+
+  console.log(events);
   
-  events.slice(0, 5).forEach((event, index) => {
+  events.slice(0, 100).forEach((event, index) => {
     console.log(`\n${index + 1}. ${event.name}`);
     console.log(`Date: ${event.date}`);
     console.log(`Venue: ${event.venueName}`);
