@@ -6,7 +6,9 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "tsx src/server.ts",
-    "test:db": "tsx tests/testDbConnection.ts"
+    "test:db": "tsx tests/test-db-connection.ts",
+    "test:ticket-service": "tsx tests/test-ticket-service.ts",
+    "test:upstash": "tsx tests/test-redis-cache.ts"
   },
   "keywords": [],
   "author": "",
