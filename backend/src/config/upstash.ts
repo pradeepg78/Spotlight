@@ -33,6 +33,49 @@ export const cacheService = {
         } catch (error) {
             console.error("Redis SET Error (setCache): ", error);
         }
+    },
+
+    // delete key from cache
+    async deleteKey(key: string): Promise<void> {
+        try {
+            await redis.del(key);
+            console.log("Key deleted: ", key);
+        } catch (error) {
+            console.error("Redis DEL Error (deleteKey): ", error);
+        }
+    },
+
+    // check if a key exists
+    async existsKey(key: string): Promise<boolean> {
+        try {
+            const result = await redis.exists(key);
+            console.log(`Key ${key} successfully found!`);
+            return result === 1;
+        } catch (error) {
+            console.error("Redis EXISTS Error (existsKey): ", error);
+            return false;
+        }
+    },
+
+    // clear entire cache
+    async clearCache(): Promise<void> {
+        try {
+            await redis.flushdb();
+            console.log("Redis cache successfully cleared!");
+        } catch (error) {
+            console.error("Redis FLUSH Error (clearCache): ", error);
+        }
+    }, 
+
+    // get cache statistics
+    async getStats(): Promise<any> {
+        try {
+            const info = await redis.dbsize();
+            return {keys : info};
+        } catch (error) {
+            console.error("Redis STATS Error (getStats): ", error);
+            return null;
+        }
     }
 };
 
