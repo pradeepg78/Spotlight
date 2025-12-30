@@ -1,0 +1,153 @@
+/* src/components/EventMap.css */
+
+.map-container {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+}
+
+/* Markers */
+.marker {
+  font-size: 32px;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.marker:hover {
+  transform: scale(1.2);
+}
+
+.marker-red {
+  filter: drop-shadow(0 2px 4px rgba(255, 0, 0, 0.4));
+}
+
+.marker-blue {
+  filter: drop-shadow(0 2px 4px rgba(0, 100, 255, 0.4));
+}
+
+/* Popup */
+.popup-content {
+  padding: 8px;
+  max-width: 250px;
+}
+
+.popup-content h3 {
+  margin: 0 0 8px 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.popup-content p {
+  margin: 4px 0;
+  font-size: 14px;
+  color: #666;
+}
+
+.event-date {
+  color: #888;
+  font-size: 12px;
+}
+
+.event-price {
+  color: #00aa00;
+  font-weight: 600;
+}
+
+.event-rating {
+  font-size: 12px;
+}
+
+/* Loading Overlay */
+.loading-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  padding: 24px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  text-align: center;
+  z-index: 1000;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #007AFF;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 12px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Legend */
+.legend {
+  position: absolute;
+  bottom: 24px;
+  left: 24px;
+  background: white;
+  padding: 16px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  z-index: 10;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  margin: 8px 0;
+  font-size: 14px;
+}
+
+.legend-icon {
+  font-size: 24px;
+  margin-right: 8px;
+}
+
+/* Refresh Button */
+.refresh-button {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  background: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.2s;
+  z-index: 10;
+}
+
+.refresh-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.refresh-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Event Count */
+.event-count {
+  position: absolute;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: white;
+  padding: 12px 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  font-size: 14px;
+  font-weight: 600;
+  z-index: 10;
+}
