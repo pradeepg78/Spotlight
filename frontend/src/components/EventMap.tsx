@@ -162,38 +162,77 @@ export default function EventMap({
     }, [ticketmasterEvents, googlePlaces]); 
 
     return (
+        //wrapper container -> holds everything
         <div className="map-container">
+            
             <Map
+                /* renders the mapbox map
+                allows the map to be controlled later, gives access to methods, grabs the mapbox instance to allow mapbox specific funtions to be called
+                mapRef is declared in EventMap 
+                */
                 ref={mapRef}
+                /* control map pos, spreads object into individual props
+                defined viewState previously; instead of writing every single map property like: 
+                <Map 
+                    longitude={viewState.longitude} 
+                    latitude={viewState.latitude} 
+                    zoom={viewState.zoom} 
+                    > 
+                use spread operator to take evert key inside viewState obj and unpack them as individual props for this component
+                if this did not exist here, the map would not know where to look
+                */
                 {...viewState}
+                /* onMove is an event listener, without this, map would be frozen
+                 evt is the object that mapbox lib sends everytime thr map moves, contains lat/long
+                 evt.viewState -> inside evt, there is a att called viewState
+                 setViewState -> update function
+                 
+                 1. You click and drag the map 50 miles to the North.
+                 2. Mapbox calculates the new coordinates (e.g., Latitude goes from 42.1 to 42.8).
+                 3. The Map component triggers the onMove function.
+                 4. Your code runs setViewState({ latitude: 42.8, ... }).
+                 5. The Re-render: React notices the state changed. It re-runs your return block.
+                 6. The Sync: {...viewState} now passes the new 42.8 latitude back into the map.
+                */
                 onMove={(evt: any) => setViewState(evt.viewState)}
                 mapboxAccessToken={MAPBOX_TOKEN}
                 style={{ width: '100%', height: '100%' }}
-                mapStyle="mapbox://styles/mapbox/streets-v12"
+                mapStyle="mapbox://styles/mapbox/standard"
             >
+                {/* zoom and compass */}
                 <NavigationControl position="top-right" />
 
                 {/* Ticketmaster Event Markers (Red) */}
+                {/* go inside events data, for every event, run the code inside the bracket */}
                 {ticketmasterEvents.map((event) => {
+                    //if this event doesnt have a specific location, dont try and draw it
                     if (!event.venue?.latitude || !event.venue?.longitude) return null;
                     
                     return (
+                        //marker is a component that links a coordinate to a place on the map
                         <Marker
+                            //allows place to be uniquely identified, since this is in a .map loop, needs to distinguish between a bunch of differnt markers
                             key={`tm-${event.id}`}
                             longitude={event.venue.longitude}
                             latitude={event.venue.latitude}
+                            //alignment point
                             anchor="bottom"
+                            //listener for click
+                            //e.originalEvent.stopPropagation() prevents a double click; clicking a place might trigger another click on the map
                             onClick={(e: any) => {
                                 e.originalEvent.stopPropagation();
+                                //take data for this event and save it to popup, take every pience of event data and combine it, and also add the source -> copy it into new object
                                 setSelectedEvent({ ...event, source: 'ticketmaster' });
                             }}
                         >
+                            {/* the emoji representing events, keep it for now change it later to something better */}
                             <div className="marker marker-red">🎫</div>
                         </Marker>
                     );
                 })}
 
                 {/* Google Places Markers (Blue) */}
+                {/* similar to above */}
                 {googlePlaces.map((place) => (
                     <Marker
                         key={`gp-${place.place_id}`}
@@ -205,24 +244,28 @@ export default function EventMap({
                             setSelectedEvent({ ...place, source: 'googlePlaces' });
                         }}
                     >
+                        {/* not really blue */}
                         <div className="marker marker-blue">📍</div>
                     </Marker>
                 ))}
 
                 {/* Popup for Selected Event */}
+                {/* if selectedEvent is null, stop; popup only exists if there is data to show */}
                 {selectedEvent && (
                     <Popup
+                        //needs to know where to anchor itself, but long is stored in two differnt locations
                         longitude={
                             selectedEvent.source === 'ticketmaster'
-                                ? selectedEvent.venue?.longitude
-                                : selectedEvent.geometry.location.lng
+                                ? selectedEvent.venue?.longitude //path a 
+                                : selectedEvent.geometry.location.lng // path b
                         }
                         latitude={
                             selectedEvent.source === 'ticketmaster'
-                                ? selectedEvent.venue?.latitude
-                                : selectedEvent.geometry.location.lat
+                                ? selectedEvent.venue?.latitude //path a
+                                : selectedEvent.geometry.location.lat //path b
                         }
                         anchor="top"
+                        //when the user presses the x, sets the selectEvent memory to null
                         onClose={() => setSelectedEvent(null)}
                         closeOnClick={false}
                     >
@@ -285,7 +328,7 @@ export default function EventMap({
 
             {/* Refresh Button */}
             <button className="refresh-button" onClick={loadMapData} disabled={loading}>
-                🔄 Refresh
+                Refresh
             </button>
 
             {/* Event Count */}
