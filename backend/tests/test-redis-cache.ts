@@ -1,3 +1,6 @@
+// tests is excluded in tsconfig to prepare for deployment (tests will be excluded from the actual deployed pp)
+// so add this line to fix the process types issue
+/// <reference types="node" /> 
 import { cacheService } from '../src/config/upstash';
 
 async function testUpstashCache() {
@@ -26,6 +29,7 @@ async function testUpstashCache() {
         console.log("Test 4: Deleting cache key...");
         await cacheService.deleteKey("test-key");
 
+        //! check test 5 again
         // Test 5: Verify key deletion
         console.log("Test 5: Verifying deletion...");
         const existsAfterDel = await cacheService.existsKey("test-key");
