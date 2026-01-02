@@ -20,7 +20,7 @@ export const eventController = {
             if (!city) {
                 return res.status(400).json({
                     success: false,
-                    message:'City parameter is required'
+                    message: 'City parameter is required'
                 });
             }
 

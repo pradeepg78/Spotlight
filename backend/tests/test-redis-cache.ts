@@ -44,7 +44,7 @@ async function testUpstashCache() {
         }
 
         // Test 7: Cache statistics
-        console.log("Test 7: Getting cache stats...")
+        console.log("Test 7: Getting cache stats...");
         const stats = await cacheService.getStats();
         console.log('Cache stats: ', stats);
 
