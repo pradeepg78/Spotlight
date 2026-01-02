@@ -1,7 +1,7 @@
-import ticketmasterService from '../services/ticketmasterService';
+import ticketmasterService from '../src/services/ticketmasterService';
 
 async function test() {
-  console.log('testing Ticketmaster Service...\n');
+  console.log('Testing Ticketmaster Service...\n');
   
   const events = await ticketmasterService.searchEvents('football', 'Ann Arbor');
   

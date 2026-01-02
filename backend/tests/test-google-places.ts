@@ -1,4 +1,4 @@
-import googlePlacesService from '../services/googlePlacesService';
+import googlePlacesService from '../src/services/googlePlacesService';
 
 async function test() {
   console.log('testing google places \n');

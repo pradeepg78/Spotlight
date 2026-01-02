@@ -12,7 +12,8 @@
     "resolveJsonModule": true,
     "moduleResolution": "node",
     "allowSyntheticDefaultImports": true,
-    "sourceMap": true
+    "sourceMap": true, 
+    "types": ["node"]
   },
   "ts-node": {
     "compilerOptions": {
