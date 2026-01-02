@@ -8,7 +8,8 @@
     "dev": "tsx src/server.ts",
     "test:db": "tsx tests/test-db-connection.ts",
     "test:ticket-service": "tsx tests/test-ticket-service.ts",
-    "test:upstash": "tsx tests/test-redis-cache.ts"
+    "test:upstash": "tsx tests/test-redis-cache.ts",
+    "test:google-places": "tsx tests/test-google-places.ts"
   },
   "keywords": [],
   "author": "",
@@ -28,11 +29,11 @@
     "sparse-bitfield": "^3.0.3"
   },
   "devDependencies": {
+    "@types/node": "^25.0.3",
+    "nodemon": "^3.1.11",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/mongoose": "^5.11.96",
-    "@types/node": "^24.10.4",
-    "nodemon": "^3.1.11",
     "ts-node": "^10.9.2",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3"
