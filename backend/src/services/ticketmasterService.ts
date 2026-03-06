@@ -83,7 +83,8 @@ class TicketmasterService {
     //   }
     //   return events; 
 
-    const events = response.data._embedded?.events || []; 
+    //! Strictly define events variable type to compy with TS rules
+    const events: TicketmasterEvent[] = response.data._embedded?.events || []; 
     const cleanEvents = events.map(event => this.transformEvent(event)); 
     return cleanEvents; 
       
