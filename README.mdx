@@ -1,0 +1,172 @@
+# Spotlight
+
+> **Discover what’s happening around you.**  
+> Spotlight combines a map-first React frontend with a TypeScript/Express backend to surface nearby venues and live events using Google Places + Ticketmaster APIs.
+
+## Why Spotlight?
+
+Spotlight helps users explore local experiences visually:
+
+- 📍 Detects your current location (with fallback support)
+- 🗺️ Renders venues and events on an interactive Mapbox map
+- 🎟️ Pulls events from Ticketmaster
+- 🏟️ Enriches venue details with Google Places
+- ⚡ Caches API responses with Upstash Redis for faster repeat queries
+
+## Tech Stack
+
+| Layer | Technology |
+| --- | --- |
+| Frontend | React 19, TypeScript, Create React App, react-map-gl, Mapbox GL, Axios |
+| Backend | Node.js, Express 5, TypeScript, Axios |
+| Data/Cache | Upstash Redis (REST API), optional MongoDB connection utility |
+| External APIs | Ticketmaster Discovery API, Google Places API |
+
+## Project Structure
+
+```text
+Spotlight/
+├── backend/
+│   ├── src/
+│   │   ├── app.ts                  # Express app + middleware + route mounting
+│   │   ├── server.ts               # Backend entry point
+│   │   ├── config/
+│   │   │   ├── upstash.ts          # Redis client + cache helpers
+│   │   │   └── database.ts         # MongoDB connection helper (currently not bootstrapped)
+│   │   ├── controllers/            # Request handlers
+│   │   ├── routes/                 # API route definitions
+│   │   ├── services/               # Ticketmaster + Google Places integrations
+│   │   ├── middleware/             # Placeholder files
+│   │   ├── models/                 # Placeholder files
+│   │   └── jobs/                   # Placeholder files
+│   └── tests/                      # Script-style integration checks
+└── frontend/
+    ├── src/
+    │   ├── index.tsx               # Frontend entry point
+    │   ├── App.tsx                 # Root component
+    │   ├── pages/MapPage.tsx       # Geolocation + date filter UI
+    │   ├── components/EventMap.tsx # Map rendering + event/venue popup logic
+    │   ├── api/                    # Backend API clients
+    │   └── types/                  # Shared frontend interfaces
+    └── README.md                   # Default CRA readme
+```
+
+## Entry Points & API Endpoints
+
+### Frontend
+- `/home/runner/work/Spotlight/Spotlight/frontend/src/index.tsx`
+- `/home/runner/work/Spotlight/Spotlight/frontend/src/App.tsx`
+- `/home/runner/work/Spotlight/Spotlight/frontend/src/pages/MapPage.tsx`
+
+### Backend
+- `/home/runner/work/Spotlight/Spotlight/backend/src/server.ts`
+- `/home/runner/work/Spotlight/Spotlight/backend/src/app.ts`
+
+### HTTP API
+
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| GET | `/health` | Server health check |
+| GET | `/api/ticketmaster/search` | Search events near lat/lng (supports radius, keyword, date range) |
+| POST | `/api/ticketmaster/events-for-venues` | Batch fetch venue-specific events |
+| GET | `/api/googlePlace/search` | Search nearby places by coordinates/type |
+| GET | `/api/events/search` | Event search endpoint wired to `eventController` |
+
+## Setup & Installation
+
+<details>
+<summary><strong>1) Clone and install dependencies</strong></summary>
+
+```bash
+git clone https://github.com/pradeepg78/Spotlight.git
+cd Spotlight
+
+cd backend && npm install
+cd ../frontend && npm install
+```
+
+</details>
+
+<details>
+<summary><strong>2) Configure environment variables</strong></summary>
+
+Create `/home/runner/work/Spotlight/Spotlight/backend/.env`:
+
+```bash
+PORT=3001
+NODE_ENV=development
+TICKETMASTER_API_KEY=your_ticketmaster_key
+GOOGLE_PLACES_API_KEY=your_google_places_key
+UPSTASH_REDIS_REST_URL=your_upstash_url
+UPSTASH_REDIS_REST_TOKEN=your_upstash_token
+# Optional for database utility:
+MONGODB_URI=your_mongodb_uri
+```
+
+Create `/home/runner/work/Spotlight/Spotlight/frontend/.env`:
+
+```bash
+REACT_APP_API_BASE_URL=http://localhost:3001
+REACT_APP_MAPBOX_TOKEN=your_mapbox_token
+```
+
+</details>
+
+<details>
+<summary><strong>3) Run the app</strong></summary>
+
+Backend:
+
+```bash
+cd /home/runner/work/Spotlight/Spotlight/backend
+npm run dev
+```
+
+Frontend:
+
+```bash
+cd /home/runner/work/Spotlight/Spotlight/frontend
+npm start
+```
+
+Open `http://localhost:3000`.
+
+</details>
+
+## Usage Flow
+
+1. User opens the map page.
+2. Browser geolocation resolves current coordinates (or defaults to Ann Arbor, MI).
+3. Frontend calls backend Ticketmaster + Google Places endpoints.
+4. Backend fetches external data, transforms it, and caches it in Upstash.
+5. Frontend groups events by venue and renders interactive markers/popups.
+
+> ℹ️ **Tip:** Use the date filter at the top of the map to narrow event results.
+
+## Key Scripts
+
+| Location | Script | Description |
+| --- | --- | --- |
+| backend | `npm run dev` | Start Express server with `tsx` |
+| backend | `npm run test:db` | MongoDB connection check |
+| backend | `npm run test:ticket-service` | Ticketmaster service check |
+| backend | `npm run test:upstash` | Redis cache helper check |
+| backend | `npm run test:google-places` | Google Places service check |
+| frontend | `npm start` | Start CRA dev server |
+| frontend | `npm test` | Run React test suite |
+| frontend | `npm run build` | Production build |
+
+## Contributing
+
+Contributions are welcome.
+
+1. Fork the repository
+2. Create a feature branch
+3. Make focused changes with tests where applicable
+4. Open a pull request with a clear description
+
+## License
+
+- The backend package declares **ISC** in `backend/package.json`.
+- No repository-level `LICENSE` file is currently present.
+
