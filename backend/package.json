@@ -25,9 +25,7 @@
     "helmet": "^8.1.0",
     "mongodb": "^7.0.0",
     "mongoose": "^9.0.2",
-    "node-cron": "^4.2.1",
-    "react": "^19.2.3",
-    "react-native-maps": "^1.26.20"
+    "node-cron": "^4.2.1"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",

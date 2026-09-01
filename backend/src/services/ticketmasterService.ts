@@ -34,6 +34,33 @@ interface RawTicketmasterEvent {
   }>;
 }
 
+/**
+ * Log the actual reason a Ticketmaster request failed.
+ *
+ * searchByLocation issues up to 52 concurrent requests and deliberately treats
+ * each one as independent (`.catch(() => null)`) so one flaky call doesn't sink
+ * the whole search. That resilience previously came at the cost of visibility:
+ * a bad API key made every request fail identically and the response still
+ * looked like a valid "0 events near you" with nothing in the logs to explain
+ * why. This surfaces the status/reason once per failing track instead.
+ */
+function logRequestFailure(track: string, error: unknown): void {
+  if (axios.isAxiosError(error)) {
+    const status = error.response?.status;
+    if (status === 401 || status === 403) {
+      console.error(`[TM] ${track} failed: ${status} ${error.response?.statusText} - check TICKETMASTER_API_KEY in .env`);
+    } else if (status === 429) {
+      console.error(`[TM] ${track} failed: 429 rate limited`);
+    } else if (status) {
+      console.error(`[TM] ${track} failed: ${status} ${error.response?.statusText ?? ''}`);
+    } else {
+      console.error(`[TM] ${track} failed: ${error.message}`);
+    }
+  } else {
+    console.error(`[TM] ${track} failed:`, error);
+  }
+}
+
 // Shape returned to the frontend
 export interface FrontendEvent {
   id: string;
@@ -126,7 +153,7 @@ class TicketmasterService {
           ...commonEventParams,
         },
       })
-      .catch(() => null);
+      .catch(err => { logRequestFailure('direct search', err); return null; });
 
     // Track B: venue-first search — finds the 50 nearest venues and grabs events for each
     // (catches smaller nearby venues that might not surface in the direct search)
@@ -140,7 +167,7 @@ class TicketmasterService {
           apikey: this.apiKey,
         },
       })
-      .catch(() => null);
+      .catch(err => { logRequestFailure('venue search', err); return null; });
 
     const [directRes, venuesRes] = await Promise.all([directSearch, venueSearch]);
 
@@ -163,15 +190,22 @@ class TicketmasterService {
     console.log(`[TM] direct=${allRaw.length} events | venue track: ${venues.length} venues`);
 
     if (venues.length > 0) {
+      let lastVenueFailure: unknown = null;
       const perVenueResults = await Promise.all(
         venues.map(v =>
           axios
             .get(`${this.baseUrl}/events.json`, {
               params: { venueId: v.id, size: 10, ...commonEventParams },
             })
-            .catch(() => null),
+            .catch(err => { lastVenueFailure = err; return null; }),
         ),
       );
+      const venueFailures = perVenueResults.filter(r => r === null).length;
+      if (venueFailures > 0) {
+        // 50 concurrent calls failing identically almost always means one root
+        // cause (bad key, rate limit) - log it once instead of 50 times.
+        logRequestFailure(`per-venue fan-out (${venueFailures}/${venues.length} failed)`, lastVenueFailure);
+      }
       perVenueResults.forEach(res => {
         if (res) addEvents(res.data._embedded?.events || []);
       });
