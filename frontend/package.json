@@ -12,10 +12,10 @@
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
     "axios": "^1.13.2",
-    "maplibre-gl": "^6.6.0",
+    "maplibre-gl": "^5.24.0",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
-    "react-map-gl": "^8.1.0",
+    "react-map-gl": "^8.1.2",
     "react-scripts": "5.0.1",
     "typescript": "^4.9.5",
     "web-vitals": "^2.1.4"
