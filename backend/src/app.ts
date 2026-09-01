@@ -27,8 +27,24 @@ app.get('/health', (_req: Request, res: Response) => {
     });
 });
 
-app.use('/api/events', eventRoutes);
+// Before this change neither route was mounted, so both requests 404'd
+// and because the frontend catches errors and returns [], the map rendered
+// empty instead of failing loudly.
 app.use('/api/ticketmaster', ticketmasterRoutes);
 app.use('/api/googlePlace', googlePlacesRoutes);
+
+// Keyword + city search, nothing in the app calls it now
+app.use('/api/events', eventRoutes);
+
+app.use('/api/ticketmaster', ticketmasterRoutes);
+app.use('/api/googlePlace', googlePlacesRoutes);
+
+// 404 handler
+app.use((req: Request, res: Response) => {
+    res.status(404).json({
+        success: false,
+        message: `Route not found: ${req.method} ${req.originalUrl}`
+    });
+});
 
 export default app;

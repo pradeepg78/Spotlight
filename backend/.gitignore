@@ -1,4 +1,2 @@
-node_modules/
-.env
-.DS_Store
-*.log
+# Backend-specific ignores (see root .gitignore for shared rules)
+dist/

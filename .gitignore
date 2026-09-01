@@ -1,0 +1,53 @@
+# ---- dependencies ----
+node_modules/
+.pnp
+.pnp.js
+jspm_packages/
+
+# ---- build output ----
+dist/
+build/
+out/
+*.tsbuildinfo
+
+# ---- environment / secrets ----
+.env
+.env.*
+!.env.example
+
+# ---- logs ----
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# ---- test / coverage ----
+coverage/
+.nyc_output/
+
+# ---- caches ----
+.cache/
+.parcel-cache/
+.eslintcache
+.npm/
+
+# ---- editor / OS ----
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+ehthumbs.db
+*.swp
+*.swo
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# ---- expo / react-native (legacy scaffold, no longer used) ----
+.expo/
+.expo-shared/
