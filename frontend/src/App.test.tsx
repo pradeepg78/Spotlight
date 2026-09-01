@@ -32,12 +32,12 @@ beforeEach(() => {
 
 test('renders the map page once a location resolves', async () => {
   render(<App />);
-  // No Mapbox token is set in the test environment, so the component renders
-  // its setup guidance instead of a live map.
-  expect(await screen.findByText(/mapbox token missing/i)).toBeInTheDocument();
+  // The map itself is stubbed out (see __mocks__/reactMapGl.tsx); this checks
+  // the surrounding chrome mounts without crashing once geolocation resolves.
+  expect(await screen.findByText(/events from/i)).toBeInTheDocument();
 });
 
-test('shows the date range filter', async () => {
+test('shows an event count once data loads', async () => {
   render(<App />);
-  expect(await screen.findByText(/events from/i)).toBeInTheDocument();
+  expect(await screen.findByText(/0 events · 0 venues/i)).toBeInTheDocument();
 });

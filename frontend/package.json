@@ -12,7 +12,7 @@
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
     "axios": "^1.13.2",
-    "mapbox-gl": "^3.1.0",
+    "maplibre-gl": "^6.6.0",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "react-map-gl": "^8.1.0",
@@ -44,14 +44,11 @@
       "last 1 safari version"
     ]
   },
-  "devDependencies": {
-    "@types/mapbox-gl": "^3.4.1"
-  },
   "jest": {
     "moduleNameMapper": {
-      "^react-map-gl/mapbox$": "<rootDir>/src/__mocks__/reactMapGl.tsx",
-      "^mapbox-gl/dist/mapbox-gl.css$": "<rootDir>/src/__mocks__/styleMock.js",
-      "^axios$": "axios/dist/node/axios.cjs"
+      "^axios$": "axios/dist/node/axios.cjs",
+      "^react-map-gl/maplibre$": "<rootDir>/src/__mocks__/reactMapGl.tsx",
+      "^maplibre-gl/dist/maplibre-gl.css$": "<rootDir>/src/__mocks__/styleMock.js"
     }
   }
 }

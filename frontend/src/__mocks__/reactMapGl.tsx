@@ -1,5 +1,5 @@
 /**
- * Test stub for react-map-gl.
+ * Test stub for react-map-gl/maplibre.
  *
  * The real package ships ESM-only with subpath exports that CRA's Jest
  * transform cannot parse. Rendering tests only need the children to appear,

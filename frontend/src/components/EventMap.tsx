@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 //mapbox components -> Map is the default export, named exports marker, popup, nav, layer
     //marker: pin, popup: popup screen, navctrl: zoom, layer: custom map layers
-import Map, { Marker, Popup, NavigationControl, Layer } from 'react-map-gl/mapbox';
-import type { MapRef } from 'react-map-gl/mapbox';
-//loads mapbox styles (appearance, controls, popups)
-import 'mapbox-gl/dist/mapbox-gl.css';
+import Map, { Marker, Popup, NavigationControl } from 'react-map-gl/maplibre';
+import type { MapRef } from 'react-map-gl/maplibre';
+//loads map styles (appearance, controls, popups)
+import 'maplibre-gl/dist/maplibre-gl.css';
 //imports from apis
 import { searchTicketmasterEvents } from '../api/ticketmaster';
 import { findVenue } from '../api/googlePlaces';
@@ -13,26 +13,12 @@ import { groupEventsByVenue, eventsWithLocation as withLocation, VenueGroup } fr
 //loads css for ts
 import './EventMap.css';
 
-const MAPBOX_TOKEN = process.env.REACT_APP_MAPBOX_TOKEN || '';
+// OpenFreeMap: unlimited free vector tiles, no API key or account required.
+// 'liberty' already ships its own 3D buildings layer, so nothing extra to add here.
+const MAP_STYLE = 'https://tiles.openfreemap.org/styles/liberty';
 
 // max events shown per venue in the popup
 const MAX_EVENTS_PER_VENUE = 10;
-
-// 3D buildings layer for light-v11
-const buildingsLayer: any = {
-    id: '3d-buildings',
-    source: 'composite',
-    'source-layer': 'building',
-    filter: ['==', 'extrude', 'true'],
-    type: 'fill-extrusion',
-    minzoom: 14,
-    paint: {
-        'fill-extrusion-color': '#ddd',
-        'fill-extrusion-height': ['interpolate', ['linear'], ['zoom'], 14, 0, 14.5, ['get', 'height']],
-        'fill-extrusion-base':   ['interpolate', ['linear'], ['zoom'], 14, 0, 14.5, ['get', 'min_height']],
-        'fill-extrusion-opacity': 0.6,
-    },
-};
 
 interface EventMapProps {
     latitude: number;
@@ -172,21 +158,6 @@ export default function EventMap({
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [ticketmasterEvents]);
 
-    // Without a token Mapbox renders nothing at all, which is a confusing first
-    // run for anyone who just cloned the repo.
-    if (!MAPBOX_TOKEN) {
-        return (
-            <div className="map-token-missing">
-                <h2>Mapbox token missing</h2>
-                <p>
-                    Set <code>REACT_APP_MAPBOX_TOKEN</code> in <code>frontend/.env</code>,
-                    then restart the dev server.
-                </p>
-                <p>See <code>frontend/.env.example</code> for the expected format.</p>
-            </div>
-        );
-    }
-
     return (
         //wrapper container -> holds everything
         <div className="map-container">
@@ -201,15 +172,11 @@ export default function EventMap({
                 {...viewState}
                 /* onMove is an event listener, without this, map would be frozen */
                 onMove={(evt: any) => setViewState(evt.viewState)}
-                mapboxAccessToken={MAPBOX_TOKEN}
                 style={{ width: '100%', height: '100%' }}
-                mapStyle="mapbox://styles/mapbox/light-v11"
+                mapStyle={MAP_STYLE}
             >
                 {/* zoom, compass, and pitch toggle */}
                 <NavigationControl position="top-right" visualizePitch={true} />
-
-                {/* 3D buildings */}
-                <Layer {...buildingsLayer} />
 
                 {/* One marker per unique event venue */}
                 {venueGroups.map((group) => (

@@ -7,7 +7,7 @@
 ## What it does
 
 - Resolves your location via browser geolocation (falls back to Ann Arbor, MI)
-- Renders every nearby event venue as a marker on an interactive Mapbox map
+- Renders every nearby event venue as a marker on an interactive map, with no API key or account required to run it
 - Groups all events at the same venue into a single marker with a scrollable popup
 - Filters events by a date range
 - Enriches the selected venue with its Google Places rating, review count, and open/closed status
@@ -17,10 +17,11 @@
 
 | Layer | Technology |
 | --- | --- |
-| Frontend | React 19, TypeScript, Create React App, react-map-gl, Mapbox GL, Axios |
+| Frontend | React 19, TypeScript, Create React App, react-map-gl, MapLibre GL, Axios |
 | Backend | Node.js, Express 5, TypeScript, Axios, tsx |
 | Cache | In-memory TTL cache, with optional Upstash Redis |
-| External APIs | Ticketmaster Discovery API, Google Places API, Mapbox |
+| External APIs | Ticketmaster Discovery API, Google Places API |
+| Map tiles | [OpenFreeMap](https://openfreemap.org) — free, unlimited, no API key |
 
 ## How the event search works
 
@@ -145,8 +146,11 @@ UPSTASH_REDIS_REST_TOKEN=
 
 ```bash
 REACT_APP_API_BASE_URL=http://localhost:3001
-REACT_APP_MAPBOX_TOKEN=your_mapbox_token
 ```
+
+No map API key needed — the map runs on MapLibre GL rendering free
+[OpenFreeMap](https://openfreemap.org) tiles, which require no signup,
+card, or usage cap.
 
 > The backend must run on a different port than the CRA dev server, which uses
 > 3000. `REACT_APP_API_BASE_URL` has to match the backend's `PORT`.
