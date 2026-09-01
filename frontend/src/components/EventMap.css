@@ -257,3 +257,83 @@
   z-index: 10;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
+
+/* ── Load failure / empty state banners ── */
+.map-error-banner,
+.map-empty-banner {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: min(560px, calc(100% - 32px));
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 13px;
+  line-height: 1.4;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+}
+
+.map-error-banner {
+  background: #fff5f5;
+  border: 1px solid #f3c2c2;
+  color: #8a1f1f;
+}
+
+.map-error-banner strong {
+  flex-shrink: 0;
+}
+
+.map-error-banner span {
+  flex: 1;
+  min-width: 0;
+}
+
+.map-error-banner button {
+  flex-shrink: 0;
+  background: #8a1f1f;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.map-error-banner button:hover {
+  background: #6d1818;
+}
+
+.map-empty-banner {
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid #e2e2e2;
+  color: #444;
+}
+
+/* ── Missing Mapbox token ── */
+.map-token-missing {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  height: 100vh;
+  padding: 24px;
+  background: #fafafa;
+  color: #333;
+  text-align: center;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.map-token-missing code {
+  background: #ececec;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 13px;
+}

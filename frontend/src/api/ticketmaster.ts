@@ -1,5 +1,5 @@
 //preconfigured axios instance created in client.ts, importing the export const apiClient = axios.create({ ... });
-import { apiClient } from './client';
+import { apiClient, toApiError } from './client';
 import { TicketmasterEvent } from '../types/events';
 
 //exporting SearchTicketMasterParams so other files can access it
@@ -12,23 +12,25 @@ export interface SearchTicketmasterParams {
     endDate?: string;   // "YYYY-MM-DD"
 }
 
-//exported async funtion that takes search params and returns a promise containing an array of tm events
+/**
+ * Search events near a coordinate.
+ *
+ * Throws ApiError on failure rather than returning [] - the caller needs to be
+ * able to tell "no events nearby" apart from "the backend is down".
+ */
 export async function searchTicketmasterEvents(
-    //fcn takes one parameter called params, must match SearchTicketmasterParams interface
     params: SearchTicketmasterParams
-    //promise is a container for a future value
 ): Promise<TicketmasterEvent[]> {
     try {
         // backend wraps response in { success, count, data: [...] }
         const response = await apiClient.get<{ data: TicketmasterEvent[] }>(
             //endpoint
             'api/ticketmaster/search',
-            {params: params}
+            { params }
         );
-        return response.data.data;
-    } catch(error) {
-        console.error('failed to fetch ticketmaster events:', error);
-        return [];
+        return response.data.data ?? [];
+    } catch (error) {
+        throw toApiError(error);
     }
 }
 
@@ -46,31 +48,6 @@ export async function getEventsForVenues(
         );
         return response.data.data ?? [];
     } catch (error) {
-        console.error('failed to fetch events for venues', error);
-        return [];
+        throw toApiError(error);
     }
 }
-
-// 1. Function called with:
-//    { latitude: 42.2808, longitude: -83.7430, radius: 10, startDate: "2026-03-05", endDate: "2026-04-05" }
-
-// 2. Axios builds URL:
-//    http://localhost:3001/api/ticketmaster/search?latitude=42.2808&longitude=-83.743&radius=10&startDate=...&endDate=...
-
-// 3. Axios adds headers (from client.ts):
-//    Content-Type: application/json
-
-// 4. Axios sends HTTP GET request
-
-// 5. Backend receives request
-
-// 6. Backend fetches from Ticketmaster API (with startDateTime/endDateTime)
-
-// 7. Backend transforms data
-
-// 8. Backend sends response:
-//    { success: true, count: 2, data: [{ id: '1', title: 'Concert 1', ... }, ...] }
-
-// 9. Axios receives response and parses JSON
-
-// 10. await completes, response.data.data = [...]

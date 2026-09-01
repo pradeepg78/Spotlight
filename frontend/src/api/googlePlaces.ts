@@ -1,12 +1,15 @@
-import { apiClient } from './client';
+import { apiClient, toApiError } from './client';
 import { GooglePlace } from '../types/events';
 
 //defines what can be searched for
 export interface SearchGooglePlacesParams {
-    //ie 'restaurants, cafes, etc'
-    query: string;
-    latitude?: number;
-    longitude?: number;
+    latitude: number;
+    longitude: number;
+    radius?: number;
+    /** Google Places category, e.g. 'restaurant' | 'cafe' | 'bar' | 'stadium' */
+    type?: string;
+    /** Free-text filter applied by the Places API, e.g. a venue name */
+    keyword?: string;
 }
 
 /** Fetch major venues (stadiums, arenas) near a location for the map */
@@ -15,34 +18,50 @@ export async function getNearbyVenues(
     longitude: number,
     radiusMeters: number = 25000
 ): Promise<GooglePlace[]> {
+    return searchGooglePlaces({
+        latitude,
+        longitude,
+        radius: radiusMeters,
+        type: 'stadium',
+    });
+}
+
+/**
+ * Resolve one named venue near a coordinate.
+ *
+ * This hits the dedicated /venue endpoint, which keyword-filters and then
+ * name-matches. The old code sent a `query` param the backend ignored, so the
+ * popup showed whichever business happened to be closest to the marker.
+ * Returns null when Google has no confident match.
+ */
+export async function findVenue(
+    name: string,
+    latitude: number,
+    longitude: number
+): Promise<GooglePlace | null> {
     try {
-        const response = await apiClient.get<{ data: GooglePlace[] }>(
-            'api/googlePlace/search',
-            {
-                params: { latitude, longitude, radius: radiusMeters, type: 'stadium' },
-            }
+        const response = await apiClient.get<{ data: GooglePlace | null }>(
+            'api/googlePlace/venue',
+            { params: { name, latitude, longitude } }
         );
-        return response.data.data || [];
+        return response.data.data ?? null;
     } catch (error) {
-        console.error('failed to fetch nearby venues', error);
-        return [];
+        throw toApiError(error);
     }
 }
 
-//exported async function that takes earch paramerts and returns a promsie containing array
+//exported async function that takes search parameters and returns a promise containing array
 export async function searchGooglePlaces(
-    //paramerter with type annotation -> take one param that must match the searchgoogleplaces interface
     params: SearchGooglePlacesParams
 ): Promise<GooglePlace[]> {
     try {
         // backend wraps response in { success, count, data: [...] }
         const response = await apiClient.get<{ data: GooglePlace[] }>(
             'api/googlePlace/search',
-            {params: params}
+            { params }
         );
-        return response.data.data;
-    } catch(error) {
-        console.error('failed to fetch google places', error);
-        return [];
+        return response.data.data ?? [];
+    } catch (error) {
+        throw toApiError(error);
     }
 }

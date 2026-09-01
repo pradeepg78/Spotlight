@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-import { cacheService } from '../config/upstash';
-import ticketmasterService from '../services/ticketmasterService';
+import { cacheService } from '../config/cache';
+import ticketmasterService, { FrontendEvent } from '../services/ticketmasterService';
 
 export const eventController = {
     async searchEvents(req: Request, res: Response) {
@@ -26,7 +26,7 @@ export const eventController = {
 
             // 3. Check if cache key exists
             const cacheKey = `events:${keyword}:${city}`;
-            const cachedData = await cacheService.getCache<Event[]>(cacheKey);
+            const cachedData = await cacheService.getCache<FrontendEvent[]>(cacheKey);
 
             if (cachedData) {
                 // 3a. If cacheData exists, return data

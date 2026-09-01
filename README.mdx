@@ -1,26 +1,73 @@
 # Spotlight
 
-> **Discover what’s happening around you.**  
-> Spotlight combines a map-first React frontend with a TypeScript/Express backend to surface nearby venues and live events using Google Places + Ticketmaster APIs.
+> **Discover what's happening around you.**
+> A map-first React frontend and a TypeScript/Express backend that surface nearby
+> live events and venue details from the Ticketmaster Discovery and Google Places APIs.
 
-## Why Spotlight?
+## What it does
 
-Spotlight helps users explore local experiences visually:
-
-- 📍 Detects your current location (with fallback support)
-- 🗺️ Renders venues and events on an interactive Mapbox map
-- 🎟️ Pulls events from Ticketmaster
-- 🏟️ Enriches venue details with Google Places
-- ⚡ Caches API responses with Upstash Redis for faster repeat queries
+- Resolves your location via browser geolocation (falls back to Ann Arbor, MI)
+- Renders every nearby event venue as a marker on an interactive Mapbox map
+- Groups all events at the same venue into a single marker with a scrollable popup
+- Filters events by a date range
+- Enriches the selected venue with its Google Places rating, review count, and open/closed status
+- Caches backend responses so repeat queries are served in milliseconds
 
 ## Tech Stack
 
 | Layer | Technology |
 | --- | --- |
 | Frontend | React 19, TypeScript, Create React App, react-map-gl, Mapbox GL, Axios |
-| Backend | Node.js, Express 5, TypeScript, Axios |
-| Data/Cache | Upstash Redis (REST API), optional MongoDB connection utility |
-| External APIs | Ticketmaster Discovery API, Google Places API |
+| Backend | Node.js, Express 5, TypeScript, Axios, tsx |
+| Cache | In-memory TTL cache, with optional Upstash Redis |
+| External APIs | Ticketmaster Discovery API, Google Places API, Mapbox |
+
+## How the event search works
+
+A naive geo search against Ticketmaster returns at most 100 events and skews
+toward the busiest venues. `searchByLocation` runs two searches concurrently and
+merges them:
+
+- **Track A — direct geo search.** One `events.json` call filtered by
+  `latlong` + `radius`. Surfaces the high-volume venues.
+- **Track B — venue-first search.** One `venues.json` call for the 50 nearest
+  venues, then one `events.json` call per venue. Catches smaller venues that
+  never make the first page of a direct search.
+
+Both tracks are issued through `Promise.all` (52 concurrent requests), deduplicated
+by event ID, and any track that fails is skipped rather than failing the request.
+On a Manhattan search this lifts results from ~100 events to ~340.
+
+The frontend then groups events by venue coordinate rounded to 4 decimal places
+(~11m), because Ticketmaster reports slightly different coordinates for different
+events at the same building. Measured against live data:
+
+| City | Events | Markers after grouping | Reduction |
+| --- | --- | --- | --- |
+| New York | 337 | 50 | 85% |
+| Chicago | 388 | 44 | 89% |
+| Los Angeles | 318 | 61 | 81% |
+| Seattle | 265 | 32 | 88% |
+| Ann Arbor | 115 | 8 | 93% |
+
+## Caching
+
+`backend/src/config/cache.ts` exposes one `cacheService` over two backends. If
+`UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` are set, Upstash Redis is
+used; otherwise, or after Redis fails once, it falls back to an in-process TTL
+cache. Failures disable Redis for the life of the process rather than paying a
+network timeout on every subsequent request.
+
+Responses are cached for 1 hour. Measured cold vs. warm on the same query:
+
+| City | Cold | Cached |
+| --- | --- | --- |
+| New York | 1.16s | 2.7ms |
+| Chicago | 0.85s | 3.2ms |
+| Los Angeles | 0.90s | 2.0ms |
+| Seattle | 0.70s | 1.6ms |
+
+`GET /health` reports the active backend along with live hit/miss counts.
 
 ## Project Structure
 
@@ -28,54 +75,41 @@ Spotlight helps users explore local experiences visually:
 Spotlight/
 ├── backend/
 │   ├── src/
-│   │   ├── app.ts                  # Express app + middleware + route mounting
-│   │   ├── server.ts               # Backend entry point
+│   │   ├── app.ts                       # Express app, middleware, route mounting
+│   │   ├── server.ts                    # Entry point
 │   │   ├── config/
-│   │   │   ├── upstash.ts          # Redis client + cache helpers
-│   │   │   └── database.ts         # MongoDB connection helper (currently not bootstrapped)
-│   │   ├── controllers/            # Request handlers
-│   │   ├── routes/                 # API route definitions
-│   │   ├── services/               # Ticketmaster + Google Places integrations
-│   │   ├── middleware/             # Placeholder files
-│   │   ├── models/                 # Placeholder files
-│   │   └── jobs/                   # Placeholder files
-│   └── tests/                      # Script-style integration checks
+│   │   │   ├── cache.ts                 # Redis + in-memory cache service
+│   │   │   └── database.ts              # MongoDB helper (not bootstrapped)
+│   │   ├── controllers/                 # Request handling, validation, caching
+│   │   ├── routes/                      # Route definitions
+│   │   └── services/                    # Ticketmaster + Google Places clients
+│   └── tests/                           # Script-style integration checks
 └── frontend/
-    ├── src/
-    │   ├── index.tsx               # Frontend entry point
-    │   ├── App.tsx                 # Root component
-    │   ├── pages/MapPage.tsx       # Geolocation + date filter UI
-    │   ├── components/EventMap.tsx # Map rendering + event/venue popup logic
-    │   ├── api/                    # Backend API clients
-    │   └── types/                  # Shared frontend interfaces
-    └── README.md                   # Default CRA readme
+    └── src/
+        ├── pages/MapPage.tsx            # Geolocation + date range filter
+        ├── components/EventMap.tsx      # Map, markers, venue popups
+        ├── utils/venueGrouping.ts       # Coordinate-keyed venue grouping (unit tested)
+        ├── api/                         # Backend clients
+        └── types/                       # Shared interfaces
 ```
 
-## Entry Points & API Endpoints
-
-### Frontend
-- `/home/runner/work/Spotlight/Spotlight/frontend/src/index.tsx`
-- `/home/runner/work/Spotlight/Spotlight/frontend/src/App.tsx`
-- `/home/runner/work/Spotlight/Spotlight/frontend/src/pages/MapPage.tsx`
-
-### Backend
-- `/home/runner/work/Spotlight/Spotlight/backend/src/server.ts`
-- `/home/runner/work/Spotlight/Spotlight/backend/src/app.ts`
-
-### HTTP API
+## HTTP API
 
 | Method | Endpoint | Purpose |
 | --- | --- | --- |
-| GET | `/health` | Server health check |
-| GET | `/api/ticketmaster/search` | Search events near lat/lng (supports radius, keyword, date range) |
-| POST | `/api/ticketmaster/events-for-venues` | Batch fetch venue-specific events |
-| GET | `/api/googlePlace/search` | Search nearby places by coordinates/type |
-| GET | `/api/events/search` | Event search endpoint wired to `eventController` |
+| GET | `/health` | Health check plus live cache stats |
+| GET | `/api/ticketmaster/search` | Events near `latitude`/`longitude`; optional `radius`, `keyword`, `startDate`, `endDate` |
+| POST | `/api/ticketmaster/events-for-venues` | Batch events for a list of `{ name, latitude, longitude }` places |
+| GET | `/api/googlePlace/search` | Nearby places by `latitude`/`longitude`; optional `radius`, `type`, `keyword` |
+| GET | `/api/googlePlace/venue` | Resolve one venue by `name` + coordinates; returns `null` when there is no confident match |
+| GET | `/api/events/search` | Event search by `keyword` + `city` |
 
-## Setup & Installation
+Every response is wrapped as `{ success, count?, data, source? }`, where `source`
+indicates whether the payload came from the cache or the upstream API.
 
-<details>
-<summary><strong>1) Clone and install dependencies</strong></summary>
+## Setup
+
+### 1) Install
 
 ```bash
 git clone https://github.com/pradeepg78/Spotlight.git
@@ -85,73 +119,68 @@ cd backend && npm install
 cd ../frontend && npm install
 ```
 
-</details>
+### 2) Configure environment
 
-<details>
-<summary><strong>2) Configure environment variables</strong></summary>
+Copy the templates and fill in your keys:
 
-Create `/home/runner/work/Spotlight/Spotlight/backend/.env`:
+```bash
+cp backend/.env.example backend/.env
+cp frontend/.env.example frontend/.env
+```
+
+`backend/.env`:
 
 ```bash
 PORT=3001
 NODE_ENV=development
 TICKETMASTER_API_KEY=your_ticketmaster_key
 GOOGLE_PLACES_API_KEY=your_google_places_key
-UPSTASH_REDIS_REST_URL=your_upstash_url
-UPSTASH_REDIS_REST_TOKEN=your_upstash_token
-# Optional for database utility:
-MONGODB_URI=your_mongodb_uri
+
+# Optional. Leave blank to use the in-memory cache.
+UPSTASH_REDIS_REST_URL=
+UPSTASH_REDIS_REST_TOKEN=
 ```
 
-Create `/home/runner/work/Spotlight/Spotlight/frontend/.env`:
+`frontend/.env`:
 
 ```bash
 REACT_APP_API_BASE_URL=http://localhost:3001
 REACT_APP_MAPBOX_TOKEN=your_mapbox_token
 ```
 
-</details>
+> The backend must run on a different port than the CRA dev server, which uses
+> 3000. `REACT_APP_API_BASE_URL` has to match the backend's `PORT`.
 
-<details>
-<summary><strong>3) Run the app</strong></summary>
-
-Backend:
+### 3) Run
 
 ```bash
-cd /home/runner/work/Spotlight/Spotlight/backend
-npm run dev
-```
+# terminal 1
+cd backend && npm run dev
 
-Frontend:
-
-```bash
-cd /home/runner/work/Spotlight/Spotlight/frontend
-npm start
+# terminal 2
+cd frontend && npm start
 ```
 
 Open `http://localhost:3000`.
 
-</details>
-
-## Usage Flow
-
-1. User opens the map page.
-2. Browser geolocation resolves current coordinates (or defaults to Ann Arbor, MI).
-3. Frontend calls backend Ticketmaster + Google Places endpoints.
-4. Backend fetches external data, transforms it, and caches it in Upstash.
-5. Frontend groups events by venue and renders interactive markers/popups.
-
-> ℹ️ **Tip:** Use the date filter at the top of the map to narrow event results.
-
-## Key Scripts
+## Scripts
 
 | Location | Script | Description |
 | --- | --- | --- |
-| backend | `npm run dev` | Start Express server with `tsx` |
-| backend | `npm run test:db` | MongoDB connection check |
-| backend | `npm run test:ticket-service` | Ticketmaster service check |
-| backend | `npm run test:upstash` | Redis cache helper check |
-| backend | `npm run test:google-places` | Google Places service check |
-| frontend | `npm start` | Start CRA dev server |
-| frontend | `npm test` | Run React test suite |
+| backend | `npm run dev` | Start the Express server with `tsx` |
+| backend | `npm run test:ticket-service` | Exercise all three Ticketmaster search paths |
+| backend | `npm run test:google-places` | Exercise the Google Places service |
+| backend | `npm run test:cache` | Cache set/get/TTL/eviction checks |
+| backend | `npm run test:db` | MongoDB connection check (needs `MONGODB_URI`) |
+| frontend | `npm start` | CRA dev server |
+| frontend | `npm test` | Jest + React Testing Library suite |
 | frontend | `npm run build` | Production build |
+
+## Known limitations
+
+- MongoDB is wired up but not bootstrapped; nothing is persisted between runs.
+  All state is either fetched live or cached.
+- There is no authentication; every endpoint is public.
+- The in-memory cache is per-process, so it does not survive a restart and is not
+  shared across instances. Configure Upstash for that.
+- Ticketmaster is the only event source, so coverage reflects theirs.

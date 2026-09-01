@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { cacheService } from '../config/upstash';
+import { cacheService } from '../config/cache';
 import ticketmasterService from '../services/ticketmasterService';
 
 export const ticketmasterController = {

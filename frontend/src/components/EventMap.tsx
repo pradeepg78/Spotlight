@@ -7,8 +7,9 @@ import type { MapRef } from 'react-map-gl/mapbox';
 import 'mapbox-gl/dist/mapbox-gl.css';
 //imports from apis
 import { searchTicketmasterEvents } from '../api/ticketmaster';
-import { searchGooglePlaces } from '../api/googlePlaces';
+import { findVenue } from '../api/googlePlaces';
 import { TicketmasterEvent, GooglePlace } from '../types/events';
+import { groupEventsByVenue, eventsWithLocation as withLocation, VenueGroup } from '../utils/venueGrouping';
 //loads css for ts
 import './EventMap.css';
 
@@ -32,15 +33,6 @@ const buildingsLayer: any = {
         'fill-extrusion-opacity': 0.6,
     },
 };
-
-// a VenueGroup bundles all events at the same physical location
-interface VenueGroup {
-    key: string;
-    venueName: string;
-    latitude: number;
-    longitude: number;
-    events: TicketmasterEvent[];
-}
 
 interface EventMapProps {
     latitude: number;
@@ -81,29 +73,22 @@ export default function EventMap({
 
 
     //derived: events that have venue coordinates and can be shown as markers
-    const eventsWithLocation = ticketmasterEvents.filter(e => e.venue?.latitude && e.venue?.longitude);
+    const eventsWithLocation = useMemo(() => withLocation(ticketmasterEvents), [ticketmasterEvents]);
 
-    //derived: group events by venue (rounded to 4 decimal places to handle float precision)
-    //Map key = "lat,lng", value = VenueGroup
-    const venueGroups = useMemo<VenueGroup[]>(() => {
-        const record: Record<string, VenueGroup> = {};
-        eventsWithLocation.forEach(event => {
-            const lat = event.venue!.latitude;
-            const lng = event.venue!.longitude;
-            //round to 4 decimals (~11m precision) so nearby events at the same venue share a key
-            const key = `${lat.toFixed(4)},${lng.toFixed(4)}`;
-            if (!record[key]) {
-                record[key] = { key, venueName: event.venue!.name, latitude: lat, longitude: lng, events: [] };
-            }
-            record[key].events.push(event);
-        });
-        return Object.values(record);
-    }, [eventsWithLocation]);
+    //derived: one marker per venue (see utils/venueGrouping for the keying rules)
+    const venueGroups = useMemo<VenueGroup[]>(
+        () => groupEventsByVenue(ticketmasterEvents),
+        [ticketmasterEvents]
+    );
 
 
     //state5
     //stores a bool, whether data is currently loading
     const [loading, setLoading] = useState(false);
+
+    //stores a load failure so the map can say why it is empty instead of just
+    //rendering zero markers, which looks identical to "nothing on near you"
+    const [loadError, setLoadError] = useState<string | null>(null);
 
     //state6
     //stores the currently selected venue group for the popup
@@ -124,6 +109,7 @@ export default function EventMap({
 
     const loadMapData = async () => {
         setLoading(true);
+        setLoadError(null);
         try {
             const events = await searchTicketmasterEvents({
                 latitude,
@@ -135,6 +121,8 @@ export default function EventMap({
             setTicketmasterEvents(events);
         } catch(error) {
             console.error('error loading map data:', error);
+            setTicketmasterEvents([]);
+            setLoadError(error instanceof Error ? error.message : 'Could not load events.');
         } finally {
             setLoading(false);
         }
@@ -147,18 +135,15 @@ export default function EventMap({
 
         setVenueLoading(true);
         try {
-            //use venue name + location to find the venue in Google Places
-            const places = await searchGooglePlaces({
-                query: group.venueName,
-                latitude: group.latitude,
-                longitude: group.longitude,
-            });
-            //take the first (most relevant) result
-            if (places.length > 0) {
-                setVenueDetails(places[0]);
-            }
+            //resolve this specific venue in Google Places by name + location.
+            //returns null when Google has no confident match, in which case the
+            //popup simply omits the ratings block rather than showing a
+            //neighbouring business's details.
+            const place = await findVenue(group.venueName, group.latitude, group.longitude);
+            setVenueDetails(place);
         } catch (error) {
             console.error('error fetching venue details:', error);
+            setVenueDetails(null);
         } finally {
             setVenueLoading(false);
         }
@@ -186,6 +171,21 @@ export default function EventMap({
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [ticketmasterEvents]);
+
+    // Without a token Mapbox renders nothing at all, which is a confusing first
+    // run for anyone who just cloned the repo.
+    if (!MAPBOX_TOKEN) {
+        return (
+            <div className="map-token-missing">
+                <h2>Mapbox token missing</h2>
+                <p>
+                    Set <code>REACT_APP_MAPBOX_TOKEN</code> in <code>frontend/.env</code>,
+                    then restart the dev server.
+                </p>
+                <p>See <code>frontend/.env.example</code> for the expected format.</p>
+            </div>
+        );
+    }
 
     return (
         //wrapper container -> holds everything
@@ -312,6 +312,22 @@ export default function EventMap({
             <button className="refresh-button" onClick={loadMapData} disabled={loading}>
                 Refresh
             </button>
+
+            {/* Load failure banner - replaces the old silent empty map */}
+            {loadError && !loading && (
+                <div className="map-error-banner" role="alert">
+                    <strong>Could not load events.</strong>
+                    <span>{loadError}</span>
+                    <button onClick={loadMapData}>Retry</button>
+                </div>
+            )}
+
+            {/* Genuine empty result, as distinct from a failure */}
+            {!loadError && !loading && venueGroups.length === 0 && (
+                <div className="map-empty-banner">
+                    No events found in this area for the selected dates.
+                </div>
+            )}
 
             {/* Event Count */}
             <div className="event-count">

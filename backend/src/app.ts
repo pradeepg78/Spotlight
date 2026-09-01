@@ -5,6 +5,7 @@ import 'dotenv/config';
 import eventRoutes from './routes/events';
 import ticketmasterRoutes from './routes/ticketmaster';
 import googlePlacesRoutes from './routes/googlePlaces';
+import { cacheService } from './config/cache';
 
 const app: Express = express();
 
@@ -19,25 +20,23 @@ app.get('/', (_req, res) => {
 });
 
 // Health Check Endpoint
-app.get('/health', (_req: Request, res: Response) => {
+app.get('/health', async (_req: Request, res: Response) => {
     res.json({
         status: 'OK',
         timestamp: new Date().toISOString(),
-        environment: process.env.NODE_ENV
+        environment: process.env.NODE_ENV,
+        cache: await cacheService.getStats()
     });
 });
 
-// Before this change neither route was mounted, so both requests 404'd
-// and because the frontend catches errors and returns [], the map rendered
-// empty instead of failing loudly.
+// Ticketmaster: geo event search + batch venue lookup
 app.use('/api/ticketmaster', ticketmasterRoutes);
+
+// Google Places: nearby search + single venue resolution
 app.use('/api/googlePlace', googlePlacesRoutes);
 
-// Keyword + city search, nothing in the app calls it now
+// Keyword + city event search
 app.use('/api/events', eventRoutes);
-
-app.use('/api/ticketmaster', ticketmasterRoutes);
-app.use('/api/googlePlace', googlePlacesRoutes);
 
 // 404 handler
 app.use((req: Request, res: Response) => {

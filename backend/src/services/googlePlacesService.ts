@@ -70,18 +70,20 @@ class GooglePlacesService {
         latitude: number,
         longitude: number, 
         radius: number = 1000, 
-        type?: string
+        type?: string,
+        keyword?: string
     ): Promise<Place[]> { 
         try {
-            console.log(`searching places near ${latitude}, ${longitude} (radius: ${radius} m)`); 
+            console.log(`searching places near ${latitude}, ${longitude} (radius: ${radius} m, type: ${type ?? 'any'}, keyword: ${keyword ?? 'none'})`); 
             //axios.get(url, config)
             const response = await axios.get<GooglePlacesResponse>(
                 `${this.baseurl}/nearbysearch/json`, 
                 { 
                     params: { 
-                        location: `${latitude}, ${longitude}`, 
+                        location: `${latitude},${longitude}`, 
                         radius: radius, 
                         type: type, 
+                        keyword: keyword, 
                         key: this.apikey
                     }
                 }
@@ -97,6 +99,42 @@ class GooglePlacesService {
             console.error("failed to search places", error); 
             throw error; 
         }
+    }
+
+    /**
+     * Resolve one specific venue by name near a coordinate.
+     *
+     * The map popup needs the Google entry for the venue it just rendered, not
+     * whatever business happens to be closest. Nearby-search is keyword-filtered
+     * and the results are then scored on name overlap, so a miss returns null
+     * rather than an unrelated place.
+     */
+    async findVenue(name: string, latitude: number, longitude: number, radius: number = 800): Promise<Place | null> {
+        const candidates = await this.searchNearby(latitude, longitude, radius, undefined, name);
+        if (candidates.length === 0) return null;
+
+        const target = name.toLowerCase().trim();
+        const targetWords = target.split(/\s+/).filter(w => w.length > 2);
+
+        let best: Place | null = null;
+        let bestScore = 0;
+
+        for (const place of candidates) {
+            const candidate = place.name.toLowerCase();
+            let score = 0;
+            if (candidate === target) score = 100;
+            else if (candidate.includes(target) || target.includes(candidate)) score = 50;
+            score += targetWords.filter(w => candidate.includes(w)).length;
+
+            if (score > bestScore) {
+                bestScore = score;
+                best = place;
+            }
+        }
+
+        // Require at least one meaningful token in common, otherwise this is a
+        // nearby business rather than the venue we asked for.
+        return bestScore > 0 ? best : null;
     }
 
     private transformPlace(googlePlace: GooglePlace): Place {

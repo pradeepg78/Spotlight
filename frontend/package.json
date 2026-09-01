@@ -46,5 +46,12 @@
   },
   "devDependencies": {
     "@types/mapbox-gl": "^3.4.1"
+  },
+  "jest": {
+    "moduleNameMapper": {
+      "^react-map-gl/mapbox$": "<rootDir>/src/__mocks__/reactMapGl.tsx",
+      "^mapbox-gl/dist/mapbox-gl.css$": "<rootDir>/src/__mocks__/styleMock.js",
+      "^axios$": "axios/dist/node/axios.cjs"
+    }
   }
 }

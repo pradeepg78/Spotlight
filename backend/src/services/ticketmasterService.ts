@@ -64,6 +64,40 @@ class TicketmasterService {
     }
   }
 
+  /**
+   * Keyword + city event search.
+   *
+   * Backs GET /api/events/search. Unlike searchByLocation this is a single
+   * request against Ticketmaster's own city index, so it is the cheap path when
+   * the caller knows the city name but has no coordinates.
+   */
+  async searchEvents(keyword: string, city: string): Promise<FrontendEvent[]> {
+    try {
+      const response = await axios.get(`${this.baseUrl}/events.json`, {
+        params: {
+          keyword,
+          city,
+          size: 100,
+          sort: 'date,asc',
+          apikey: this.apiKey,
+        },
+      });
+
+      const raw: RawTicketmasterEvent[] = response.data._embedded?.events || [];
+      console.log(`[TM] searchEvents keyword="${keyword}" city="${city}" -> ${raw.length} events`);
+      return raw.map(e => this.transformEvent(e));
+    } catch (error) {
+      // A 404 from Ticketmaster just means "nothing matched", which is a valid
+      // empty result rather than a server error.
+      if (axios.isAxiosError(error) && error.response?.status === 404) {
+        console.log(`[TM] searchEvents keyword="${keyword}" city="${city}" -> no matches`);
+        return [];
+      }
+      console.error('[TM] searchEvents failed:', error);
+      throw error;
+    }
+  }
+
   async searchByLocation(
     latitude: number,
     longitude: number,
